@@ -1,0 +1,40 @@
+# --- Core Orchestration ---
+# Airflow 3.1.5 requires requests >= 2.32.0
+apache-airflow==3.1.5
+apache-airflow-providers-postgres==5.10.0
+
+# --- Data Quality & Analysis ---
+# GX 0.18.8 is compatible with requests >= 2.32.0
+great-expectations==0.18.8
+pandas==2.1.4
+numpy==1.26.4
+yfinance==0.2.35
+fredapi==0.5.1
+
+# --- Database & Drivers ---
+psycopg2-binary==2.9.9
+# Airflow 3.x works best with SQLAlchemy 2.0+, 
+# but if you must use 1.4, use the latest bugfix:
+sqlalchemy==1.4.52
+timescale-vector==0.0.1
+
+# --- Networking & Requests (The Fix) ---
+requests==2.32.3
+python-dotenv==1.0.0
+pendulum==3.1.0
+pytz==2023.3
+
+# --- Cache & Messaging ---
+redis==5.0.1
+hiredis==2.3.2
+slack-sdk==3.26.2
+sendgrid==6.11.0
+
+# --- Monitoring ---
+prometheus-client==0.19.0
+statsd==4.0.1
+
+# --- Testing ---
+pytest==7.4.3
+pytest-cov==4.1.0
+pytest-mock==3.12.0
