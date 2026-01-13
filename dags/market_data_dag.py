@@ -8,7 +8,7 @@ from airflow.exceptions import AirflowSkipException
 import pandas as pd
 import yfinance as yf
 from utils.market_calendar import is_market_open_today, get_next_trading_day
-from utils.data_fetchers import fetch_ohlcv_batch
+from utils.data_fetchers import fetch_ohclv_batch
 from utils.db_utils import bulk_insert_ohclv
 from utils.redis_cache import cache_latest_prices
 from utils.notifications import send_slack_alert
@@ -17,7 +17,7 @@ from utils.notifications import send_slack_alert
 default_args = {
     'owner': 'quant_team',
     'depends_on_past': False,
-    'start_date': datetime(2026, 1 , 7),
+    'start_date': datetime(2024, 1 , 1),
     'email_on_failure': True,
     'email_on_retry': False,
     'retries': 3,
@@ -52,7 +52,7 @@ def fetch_market_data_batch(**context):
     for i in range(0, len(tickers), batch_size):
         batch = tickers[i:i + batch_size]
         try:
-            data = fetch_ohlcv_batch(batch, period='id')
+            data = fetch_ohclv_batch(batch, period='id')
             all_data.append(data)
         except Exception as e:
             failed_tickers.extend(batch)

@@ -188,26 +188,26 @@ CREATE INDEX IF NOT EXISTS idx_calendar_date ON market_calendar(date);
 
 -- Populate with common US market holidays (example for 2026-2028)
 INSERT INTO market_calendar (date, is_trading_day, holiday_name) VALUES 
-('2026-01-01', FALSE, 'New Year''s Day'),
-('2026-01-19', FALSE, 'Martin Luther King Jr. Day'), 
-('2026-02-16', FALSE, 'Presidents'' Day'), 
-('2026-04-03', FALSE, 'Good Friday'), 
-('2026-05-25', FALSE, 'Memorial Day'), 
-('2026-06-19', FALSE, 'Juneteenth'), 
-('2026-07-04', FALSE, 'Independence Day'), 
-('2026-09-07', FALSE, 'Labor Day'), 
-('2026-11-26', FALSE, 'Thanksgiving'), 
-('2026-12-25', FALSE, 'Christmas Day'), 
-('2027-01-01', FALSE, 'New Year''s Day'), 
-('2027-01-18', FALSE, 'Martin Luther King Jr. Day'), 
-('2027-02-15', FALSE, 'Presidents'' Day'), 
-('2027-03-26', FALSE, 'Good Friday'), 
-('2027-05-31', FALSE, 'Memorial Day'), 
-('2027-06-19', FALSE, 'Juneteenth'), 
-('2027-07-04', FALSE, 'Independence Day'), 
-('2027-09-06', FALSE, 'Labor Day'), 
-('2027-11-25', FALSE, 'Thanksgiving'), 
-('2027-12-25', FALSE, 'Christmas Day')
+('2024-01-01', FALSE, 'New Year''s Day'),
+('2024-01-15', FALSE, 'Martin Luther King Jr. Day'),
+('2024-02-19', FALSE, 'Presidents'' Day'),
+('2024-03-29', FALSE, 'Good Friday'),
+('2024-05-27', FALSE, 'Memorial Day'),
+('2024-06-19', FALSE, 'Juneteenth'),
+('2024-07-04', FALSE, 'Independence Day'),
+('2024-09-02', FALSE, 'Labor Day'),
+('2024-11-28', FALSE, 'Thanksgiving'),
+('2024-12-25', FALSE, 'Christmas Day'),
+('2025-01-01', FALSE, 'New Year''s Day'),
+('2025-01-20', FALSE, 'Martin Luther King Jr. Day'),
+('2025-02-17', FALSE, 'Presidents'' Day'),
+('2025-04-18', FALSE, 'Good Friday'),
+('2025-05-26', FALSE, 'Memorial Day'),
+('2025-06-19', FALSE, 'Juneteenth'),
+('2025-07-04', FALSE, 'Independence Day'),
+('2025-09-01', FALSE, 'Labor Day'),
+('2025-11-27', FALSE, 'Thanksgiving'),
+('2025-12-25', FALSE, 'Christmas Day')
 ON CONFLICT (date) DO NOTHING;
 
 
