@@ -79,13 +79,13 @@ def bulk_insert_options(df: pd.DataFrame) -> int:
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             records = [
-                (row['ticker'], row['expiration'], row['strike'], row['option_tyoe'],
+                (row['ticker'], row['expiration'], row['strike'], row['option_type'],
                  row['bid'], row['ask'], row['last'], row['volume'],
                  row['open_interest'], row['implied_volatility'], pd.Timestamp.now())
                  for _, row in df.iterrows()
             ]
 
-            execute_values(cur, insert_query, records, page_sixe=500)
+            execute_values(cur, insert_query, records, page_size=500)
 
     return len(records)
 
@@ -142,7 +142,7 @@ def bulk_insert_dividends(df: pd.DataFrame) -> int:
 
 def bulk_insert_splits(df: pd.DataFrame) -> int:
     insert_query = """
-        INSERT)INTO stock_splits
+        INSERT INTO stock_splits
         (ticker, ex_date, split_ratio)
         VALUES %s
         ON CONFLICT (ticker, ex_date)
@@ -152,7 +152,7 @@ def bulk_insert_splits(df: pd.DataFrame) -> int:
         with conn.cursor() as cur:
             records = [
                 (row['ticker'], row['ex_date'], row['split_ratio'])
-                for _, row in df.iterrow()
+                for _, row in df.iterrows()
             ]
 
             execute_values(cur, insert_query, records)
@@ -175,7 +175,7 @@ def adjust_historical_prices(ticker: str, split_ratio: float, ex_date: str):
         """
     
     with get_db_connection() as conn:
-        with conn.sursor() as cur:
+        with conn.cursor() as cur:
             cur.execute(adjust_query,
                         (split_ratio, split_ratio, split_ratio,
                         split_ratio, split_ratio, ticker, ex_date))
