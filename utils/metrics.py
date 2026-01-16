@@ -22,7 +22,7 @@ def calculate_daily_metrics(date_str: str) -> Dict:
         cur = conn.cursor()
 
         # Expected ticker count (from stock universe)
-        cur.execute('SELECT COUNT(* FROM stock_universe WHERE is_active = true)')
+        cur.execute('SELECT COUNT(*) FROM stock_universe WHERE is_active = true')
         expected_count = cur.fetchone()[0]
 
         # actually collected
