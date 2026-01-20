@@ -8,7 +8,7 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 
 default_args = {
-    'owner': 'qaunt_team',
+    'owner': 'quant_team',
     'depends_on_past': False,
     'start_date': datetime(2024, 1, 1),
     'retries': 3,

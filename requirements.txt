@@ -1,4 +1,4 @@
-# --- Core Orchestration ---
+﻿# --- Core Orchestration ---
 apache-airflow-providers-postgres==5.10.0
 
 # --- Data Quality & Analysis ---
@@ -9,14 +9,14 @@ yfinance==0.2.35
 fredapi==0.5.1
 
 # --- Database & Drivers ---
-psycopg2==2.9.9
+psycopg2-binary==2.9.9
 sqlalchemy==1.4.52
 timescale-vector==0.0.1
 
 # --- Networking & Requests ---
 requests==2.32.3
 python-dotenv==1.0.0
-# Recommended for Airflow 2.10 compatibility:
+# Recommended for Airflow compatibility:
 pendulum>=2.1.2,<3.0.0
 pytz==2023.3
 

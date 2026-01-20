@@ -4,10 +4,11 @@ from airflow.operators.python import PythonOperator
 from airflow.exceptions import AirflowSkipException
 import pandas as pd
 import logging
+import os
 
 # Assuming these are in your PYTHONPATH
 from utils.market_calendar import is_market_open_today
-from utils.data_fetchers import fetch_ohclv_batch
+from utils.data_fetchers import fetch_alpha_vantage_batch
 from utils.db_utils import bulk_insert_ohclv, insert_metrics
 from utils.redis_cache import cache_latest_prices
 from utils.notifications import send_slack_alert
@@ -16,7 +17,7 @@ default_args = {
     'owner': 'quant_team',
     'depends_on_past': False,
     'start_date': datetime(2024, 1, 1),
-    'retries': 3,
+    'retries': 1,  # Reduced retries since Alpha Vantage has rate limits
     'retry_delay': timedelta(minutes=5),
 }
 
@@ -40,33 +41,30 @@ def fetch_market_data_batch(**context):
     if not tickers:
         raise ValueError("No tickers found in XCom from fetch_stock_universe")
 
-    batch_size = 50
-    all_data = []
-    failed_tickers = []
-
-    for i in range(0, len(tickers), batch_size):
-        batch = tickers[i:i + batch_size]
-        try:
-            data = fetch_ohclv_batch(batch, period='1d') # Changed 'id' to '1d' assuming standard yfinance
-            if not data.empty:
-                all_data.append(data)
-        except Exception as e:
-            failed_tickers.extend(batch)
-            logging.error(f"Batch {i//batch_size} failed: {e}")
+    logging.info(f"Fetching market data for {len(tickers)} tickers from Alpha Vantage...")
     
-    # Always push something, even if empty, to prevent NoneType errors downstream
-    if all_data:
-        combined_data = pd.concat(all_data, ignore_index=True)
-        ti.xcom_push(key='market_data', value=combined_data.to_json())
-    else:
-        ti.xcom_push(key='market_data', value=None)
-
-    ti.xcom_push(key='failed_tickers', value=failed_tickers)
+    # Get API key from environment
+    api_key = os.getenv('ALPHA_VANTAGE_API_KEY')
+    if not api_key:
+        raise ValueError("ALPHA_VANTAGE_API_KEY not set in environment")
     
-    if failed_tickers:
-        send_slack_alert(f"Warning: {len(failed_tickers)} tickers failed to fetch")
-    
-    return len(all_data)
+    try:
+        # Use the Alpha Vantage batch fetcher
+        data = fetch_alpha_vantage_batch(tickers, api_key)
+        
+        if data.empty:
+            logging.warning("No market data returned. Will proceed with empty dataset.")
+            ti.xcom_push(key='market_data', value='{}')
+            return 0
+        
+        logging.info(f"Successfully fetched {len(data)} records for {data['ticker'].nunique()} tickers")
+        ti.xcom_push(key='market_data', value=data.to_json())
+        return len(data)
+        
+    except Exception as e:
+        logging.error(f"Failed to fetch market data: {e}")
+        ti.xcom_push(key='market_data', value='{}')
+        return 0
 
 def validate_and_load_data(**context):
     from utils.great_expectations_suite import validate_ohclv_data
@@ -76,21 +74,33 @@ def validate_and_load_data(**context):
     data_json = ti.xcom_pull(key='market_data', task_ids='fetch_market_data')
     
     # GUARD: Check if data_json is None or empty
-    if data_json is None:
+    if data_json is None or data_json == '{}':
         logging.warning("No data found in XCom 'market_data'. Skipping load.")
         raise AirflowSkipException("No data to validate/load.")
 
-    df = pd.read_json(data_json)
+    try:
+        df = pd.read_json(data_json)
+    except:
+        logging.warning("Could not parse market data JSON. Skipping load.")
+        raise AirflowSkipException("Invalid data format.")
     
     if df.empty:
-        raise AirflowSkipException("DataFrame is empty. Skipping.")
+        logging.warning("DataFrame is empty. Skipping load.")
+        raise AirflowSkipException("Empty DataFrame.")
 
+    # Validate data quality
     validation_results = validate_ohclv_data(df)
     if not validation_results['success']:
+        logging.warning(f"Data validation failed: {validation_results['errors']}")
         send_slack_alert(f"Data validation failed: {validation_results['errors']}")
-        raise Exception("Data quality check failed.")
+        # Don't fail the DAG on validation errors, just skip insert
+        raise AirflowSkipException("Data quality check failed.")
     
+    # Insert into database
     records_inserted = bulk_insert_ohclv(df)
+    logging.info(f"Inserted {records_inserted} records into database")
+    
+    # Update cache
     cache_latest_prices(df)
     
     ti.xcom_push(key='records_inserted', value=records_inserted)

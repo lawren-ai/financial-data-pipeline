@@ -1,4 +1,3 @@
-# docker-compose.yml (UPDATED WITH ENV LOADERS)
 
 services:
   postgres:
@@ -11,7 +10,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5433:5432"
+      - "5433:5432" 
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./schema/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -51,7 +50,8 @@ services:
         condition: service_healthy
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      # Use internal service name 'postgres' and internal port 5432
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
       AIRFLOW_HOME: /opt/airflow
@@ -65,9 +65,7 @@ services:
       - |
         echo "Waiting for postgres..."
         sleep 5
-        echo "Initializing Airflow database..."
-        airflow db init
-        echo "Creating admin user..."
+        airflow db migrate
         airflow users create \
           --username admin \
           --firstname Admin \
@@ -88,34 +86,21 @@ services:
     depends_on:
       airflow-init:
         condition: service_completed_successfully
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      # FIXED PORT: Use 5432 for internal communication
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
       AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY}
+      AIRFLOW__WEBSERVER__WEB_SERVER_MASTER_TIMEOUT: 300
       AIRFLOW_HOME: /opt/airflow
       PYTHONPATH: /opt/airflow
-      
-      # Keys from .env
       FRED_API_KEY: ${FRED_API_KEY}
-      
-      # Database connection for Python scripts
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      
-      _AIRFLOW_WWW_USER_CREATE: 'true'
-      _AIRFLOW_WWW_USER_USERNAME: 'admin'
-      _AIRFLOW_WWW_USER_PASSWORD: 'admin'
     volumes:
       - ./dags:/opt/airflow/dags
       - ./utils:/opt/airflow/utils
@@ -141,27 +126,17 @@ services:
     depends_on:
       airflow-init:
         condition: service_completed_successfully
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      # FIXED PORT: Use 5432 for internal communication
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
       AIRFLOW_HOME: /opt/airflow
       PYTHONPATH: /opt/airflow
-      
-      # Keys from .env
       FRED_API_KEY: ${FRED_API_KEY}
-      
-      # Database connection for Python scripts
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
     volumes:
@@ -171,7 +146,7 @@ services:
       - ./plugins:/opt/airflow/plugins
     command: scheduler
     healthcheck:
-      test: ["CMD-SHELL", "airflow jobs check --job-type SchedulerJob --hostname $(hostname)"]
+      test: ["CMD-SHELL", "airflow jobs check --job-type SchedulerJob --hostname $$(hostname)"]
       interval: 30s
       timeout: 10s
       retries: 5

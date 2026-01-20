@@ -3,19 +3,33 @@ import requests
 from typing import List
 
 
+import requests
+from typing import List
+import pandas as pd
+
 def get_sp500_tickers() -> List[str]:
-    """Fetch s&P 500 ticker list from Wikipedia"""
+    """Fetch S&P 500 ticker list from Wikipedia with proper headers"""
     url = 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
     try:
-        tables = pd.read_html(url)
+        # 1. Fetch the content with headers
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status() # This will catch the 403 error specifically
+        
+        # 2. Pass the text content to pandas
+        tables = pd.read_html(response.text)
         df = tables[0]
-        tickers = df['Symbol'].str.replace('.', '-').tolist()
+        
+        # 3. Clean tickers (Yahoo Finance uses '-' for '.' in symbols like BRK-B)
+        tickers = df['Symbol'].str.replace('.', '-', regex=False).tolist()
         return tickers
+        
     except Exception as e:
         print(f"Error fetching S&P 500 tickers: {e}")
         # Return cached list as fallback
         return _get_cached_sp500_tickers()
-    
 def get_nasdaq100_tickers() -> List[str]:
     """Fetch NASDAQ 100 ticker List"""
     url = 'https://en.wikipedia.org/wiki/NASDAQ-100'

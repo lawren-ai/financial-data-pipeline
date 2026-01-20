@@ -43,7 +43,7 @@ def calculate_daily_metrics(date_str: str) -> Dict:
                     SELECT
                         COUNT(*) as total_records,
                         COUNT(*) FILTER (WHERE open > 0 AND high > 0 AND low > 0 AND close > 0),
-                        COUNT(*) FILTER (WHERE high >= open AND high >= close AND hgh >= low) as valid_ohlc,
+                        COUNT(*) FILTER (WHERE high >= open AND high >= close AND high >= low) as valid_ohlc,
                         COUNT(*) FILTER (WHERE volume >= 0) as valid_volume
                     FROM ohclv_data
                     WHERE date = %s
@@ -91,7 +91,7 @@ def calculate_daily_metrics(date_str: str) -> Dict:
                 SELECT 
                     AVG(ABS((close - open) / open * 100)) as avg_price_change,
                     MAX(ABS((close - open) / open * 100)) as max_price_change,
-                    COUNT(*) FILTER (WHERE ABS((close - open)  open * 100) > 5) as large_moves
+                    COUNT(*) FILTER (WHERE ABS((close - open) / open * 100) > 5) as large_moves
                 FROM ohclv_data
                 WHERE date = %s AND open > 0
                 """, (target_date,))
@@ -132,7 +132,7 @@ def calculate_daily_metrics(date_str: str) -> Dict:
         sla_checks = {
             'collection_rate': metrics.get('collection_rate', 0) >= 99.0,
             'validation_pass_rate': metrics.get('validation_pass_rate', 0) >= 99.5,
-            'data_frshness': metrics.get('data_freshness_minutes', 999) < 15
+            'data_freshness': metrics.get('data_freshness_minutes', 999) < 15
         }
 
         metrics['sla_compliance_rate'] = (sum(sla_checks.values()) / len(sla_checks) * 100)
@@ -169,7 +169,7 @@ def get_pipeline_health_summary(days: int = 7) -> Dict:
         # Get average metrics over period
         cur.execute("""
                 SELECT
-                    AVG(metric_value) FILTER (WHERE metric_name = 'collection_rate') as avg_collection_rate
+                    AVG(metric_value) FILTER (WHERE metric_name = 'collection_rate') as avg_collection_rate,
                     AVG(metric_value) FILTER (WHERE metric_name = 'validation_pass_rate') as avg_validation_rate,
                     AVG(metric_value) FILTER (WHERE metric_name = 'data_freshness_minutes') as avg_freshness,
                     AVG(metric_value) FILTER (WHERE metric_name = 'overall_health_score') as avg_health_score,
@@ -183,7 +183,7 @@ def get_pipeline_health_summary(days: int = 7) -> Dict:
         if result:
             summary['avg_collection_rate'] = float(result[0]) if result[0] else 0
             summary['avg_validation_rate'] = float(result[1]) if result[1] else 0
-            summary['avg_frshness_minutes'] = float(result[2]) if result[2] else 0
+            summary['avg_freshness_minutes'] = float(result[2]) if result[2] else 0
             summary['avg_health_score'] = float(result[3]) if result[3] else 0
             summary['days_with_data'] = result[4] or 0
 

@@ -92,7 +92,7 @@ def validate_ohclv_data(df: pd.DataFrame) -> dict:
 
 
         # data/timestamp validation
-        result = dataset.expect_column_values_to_not_be_null('data')
+        result = dataset.expect_column_values_to_not_be_null('date')
         if not result.success:
             results['errors'].append("Null dates detected")
             results['success'] = False
@@ -172,7 +172,7 @@ def validate_options_data(df: pd.DataFrame) -> dict:
             df['spread'] = df['ask'] - df['bid']
             invalid_spreads = df[df['spread'] < 0]
             if not invalid_spreads.empty:
-                results['errors'].append("Neative bid-ask spreads detected")
+                results['errors'].append("Negative bid-ask spreads detected")
                 results['success'] = False
             
             # implied volatility range check
