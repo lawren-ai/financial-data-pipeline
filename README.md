@@ -1,4 +1,6 @@
 # Financial Data Pipeline
+[![Airflow](https://img.shields.io/badge/Airflow-3.0+-017CEE?logo=apache-airflow)](https://airflow.apache.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-4169E1?logo=postgresql)](https://www.postgresql.org/)
 
 A personal automated financial data collection and storage system. Fetches market data, options, dividends, stock splits, and economic indicators from multiple sources and stores them in PostgreSQL for analysis.
 
